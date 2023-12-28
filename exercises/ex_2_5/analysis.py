@@ -2,11 +2,16 @@
 
 import os
 
+import sys
+sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
+
 import matplotlib; matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
 import constants as c
+
+# import /Users/jinho/Desktop/reinforcement_learning/constants as c
 import plotting
 
 def load_file(name):

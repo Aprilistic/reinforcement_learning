@@ -11,7 +11,7 @@ class BaseActor(object, metaclass=abc.ABCMeta):
 		pass
 
 
-class EplisonGreedyActor(BaseActor):
+class EpsilonGreedyActor(BaseActor):
 	def __init__(self, n_actions, epsilon=0.01, random_state=None):
 		self.n_actions = n_actions
 		self.epsilon = epsilon

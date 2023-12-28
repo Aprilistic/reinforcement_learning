@@ -1,5 +1,8 @@
 import os
 
+import sys
+sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
+
 import numpy as np
 import pandas as pd
 
@@ -8,7 +11,7 @@ from bandits import SampleAverageEstimator, ExponentialRecencyWeightedEstimator,
 from bandits import utils
 
 from concurrent.futures import ProcessPoolExecutor
-from bandits import sampler
+# from bandits import sampler
 
 AGENT_RANDOM_STATE = np.random.RandomState(seed=1)
 
@@ -43,7 +46,10 @@ def new_agent():
 		)
 
 if __name__ == '__main__':
-	EstimatorType = SampleAverageEstimator(
+	# EstimatorType = SampleAverageEstimator
+	EstimatorType = ExponentialRecencyWeightedEstimator
+  
+	sampler = utils.RandomWalkingValueSampler(
 		n_steps = N_STEPS,
 		n_bandits = N_BANDITS,
 		loc = 0.0,
@@ -58,7 +64,7 @@ if __name__ == '__main__':
 
 	with ProcessPoolExecutor(max_workers=4) as executor:
 		for _ in range(N_ITERS):
-			print('Submitting', i)
+			print('Submitting', _)
 
 			agent = new_agent()
 			samples = sampler.sample(initial_values=np.zeros(N_BANDITS))
