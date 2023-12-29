@@ -36,6 +36,7 @@ def new_agent():
     return ActionValueBanditAgent(
         estimators = [
             SampleAverageEstimator(INITIAL_VALUE)
+            # ExponentialRecencyWeightedEstimator(ALPHA, INITIAL_VALUE)
             for _ in range(N_BANDITS)
 				],
         actor = EpsilonGreedyActor(
@@ -46,8 +47,8 @@ def new_agent():
 		)
 
 if __name__ == '__main__':
-	# EstimatorType = SampleAverageEstimator
-	EstimatorType = ExponentialRecencyWeightedEstimator
+	EstimatorType = SampleAverageEstimator
+	# EstimatorType = ExponentialRecencyWeightedEstimator
   
 	sampler = utils.RandomWalkingValueSampler(
 		n_steps = N_STEPS,
