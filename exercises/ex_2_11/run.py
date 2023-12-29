@@ -1,101 +1,123 @@
+import matplotlib
+import constants as c
+from bandits import (
+	ExponentialRecencyWeightedEstimator,
+	SampleAverageEstimator,
+	EpsilonGreedyActor,
+	ActionValueBanditAgent,
+	utils
+)
+import pandas as pd
+import numpy as np
+from concurrent.futures import ProcessPoolExecutor
 import os
 
 import sys
 sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
 
-import numpy as np
-import pandas as pd
 
-import constants as c
-from bandits import SampleAverageEstimator, ExponentialRecencyWeightedEstimator, ActionValueBanditAgent, EpsilonGreedyActor
-from bandits import utils
+matplotlib.use('TKAgg')
 
-from concurrent.futures import ProcessPoolExecutor
-# from bandits import sampler
 
-AGENT_RANDOM_STATE = np.random.RandomState(seed=1)
-
-N_STEPS = int(1e5)
+N_STEPS = 200000
 N_BANDITS = 10
-N_ITERS = 200
-EPSILON = 0.1
-ALPHA = 0.1
+PARAMS = 2. ** np.arange(-7, -1)
 INITIAL_VALUE = 0.
+STEP_SIZE = 0.1
 
 
-def save_frame(frame, filename):
-    return frame.to_pickle(
-            os.path.join(
-                    c.Paths.output,
-                    'ex_2_5',
-                    filename
-            )
-    )
+def process_outputs(output):
+	grades = output.choices == output.optimal
+	_, second_half = np.array.split(grades, 2)
+	return np.mean(second_half)
 
-def new_agent():
-    return ActionValueBanditAgent(
-        estimators = [
-            SampleAverageEstimator(INITIAL_VALUE)
-            # ExponentialRecencyWeightedEstimator(ALPHA, INITIAL_VALUE)
-            for _ in range(N_BANDITS)
-				],
-        actor = EpsilonGreedyActor(
-						n_actions = N_BANDITS,
-						epsilon = EPSILON,
-						random_state = AGENT_RANDOM_STATE
-				)
+
+def evaluate_single_agent(agent, samples):
+	return process_outputs(
+		utils.run_single(
+			agent,
+			samples
 		)
+	)
 
-if __name__ == '__main__':
-	EstimatorType = SampleAverageEstimator
-	# EstimatorType = ExponentialRecencyWeightedEstimator
-  
+
+if __name__ == "__main__":
 	sampler = utils.RandomWalkingValueSampler(
-		n_steps = N_STEPS,
-		n_bandits = N_BANDITS,
-		loc = 0.0,
-		scale = 0.01,
+		n_steps=N_STEPS,
+		n_bandits=N_BANDITS,
+		loc=0.,
+		scale=0.01,
 		random_state=np.random.RandomState(seed=42)
 	)
+
+	samples = sampler.sample(initial_values=np.zeros(N_BANDITS))
 	
-	all_choices = list()
-	all_explore = list()
-	all_optimal = list()
-	results = list()
+	sample_average_outputs = dict()
+	constant_step_outputs = dict()
+	with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+		for param in PARAMS:
+			print('Submitting', param)
 
-	with ProcessPoolExecutor(max_workers=4) as executor:
-		for _ in range(N_ITERS):
-			print('Submitting', _)
-
-			agent = new_agent()
-			samples = sampler.sample(initial_values=np.zeros(N_BANDITS))
-			results.append(executor.submit(utils.run_single, agent, samples))
-
+			sample_average_agent = ActionValueBanditAgent(
+				estimators=[
+					SampleAverageEstimator(INITIAL_VALUE)
+					for _ in range(N_BANDITS)
+				],
+				actor=EpsilonGreedyActor(
+					epsilon=param,
+					n_actions=N_BANDITS,
+					random_state=np.random.RandomState(seed=42)
+				)
+			)
+			constant_step_agent = ActionValueBanditAgent(
+				estimators=[
+					ExponentialRecencyWeightedEstimator(
+						initial_value=INITIAL_VALUE,
+						step_size=STEP_SIZE
+					)
+					for _ in range(N_BANDITS)
+				],
+				actor=EpsilonGreedyActor(
+					epsilon=param,
+					n_actions=N_BANDITS,
+					random_state=np.random.RandomState(seed=42)
+				)
+			)
+			sample_average_outputs[param] = executor.submit(
+				evaluate_single_agent,
+				sample_average_agent,
+				samples
+			)
+			constant_step_outputs[param] = executor.submit(
+				evaluate_single_agent,
+				constant_step_agent,
+				samples
+			)
+	
 	print('Waiting for results')
-	for future in results:
-		output = future.result()
-		all_choices.append(output.choices)
-		all_explore.append(output.explore)
-		all_optimal.append(output.optimal)
-
-	all_choices = pd.DataFrame(np.c_[all_choices].T)
-	all_explore = pd.DataFrame(np.c_[all_explore].T)
-	all_optimal = pd.DataFrame(np.c_[all_optimal].T)
-
-	save_frame(
-		all_choices,
-		r'choices_{}_eps{}.pkl'.format(
-			EstimatorType.__name__.lower(),
-			EPSILON
-		)
-	)
-
-	save_frame(
-		all_explore,
-		r'explore_{}_eps{}.pkl'.format(
-			EstimatorType.__name__.lower(),
-			EPSILON
-		)
-	)
-
-	save_frame(all_optimal, r'optimal.pkl')
+	sample_average_outputs = {k: v.result() for k, v in sample_average_outputs.items()}
+	constant_step_outputs = {k: v.result() for k, v in constant_step_outputs.items()}
+	
+	results = pd.concat(
+                    [
+                        pd.Series(sample_average_outputs, name='Sample Average'),
+                        pd.Series(constant_step_outputs, name='Constant Step')
+                    ],
+                    axis=1
+            )
+	
+	pd.DataFrame(samples).to_pickle(
+            os.path.join(
+                    c.Paths.output,
+                    'ex_2_11',
+                    'samples.pkl'
+            )
+    )
+	
+	results.to_pickle(
+            os.path.join(
+                    c.Paths.output,
+                    'ex_2_11',
+                    'results.pkl'
+            )
+    )

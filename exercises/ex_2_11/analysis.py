@@ -5,57 +5,66 @@ import os
 import sys
 sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
 
-import matplotlib; matplotlib.use('TkAgg')
+import matplotlib; matplotlib.use('svg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
 import constants as c
-
-# import /Users/jinho/Desktop/reinforcement_learning/constants as c
 import plotting
 
-def load_file(name):
-    return pd.read_pickle(
-            os.path.join(c.Paths.output, 'ex_2_5', name),
-    ).rename(columns=int)
-
-
 if __name__ == '__main__':
-    epsilon = 0.1
-    estimator_type = 'ExponentialRecencyWeightedEstimator'.lower()
-
-    all_exponential_choices = load_file(
-            r'choices_{}_eps{}.pkl'.format(
-                    'ExponentialRecencyWeightedEstimator'.lower(),
-                    epsilon
+    samples = pd.read_pickle(
+            os.path.join(
+                    c.Paths.output,
+                    'ex_2_11',
+                    'samples.pkl'
             )
     )
 
-    all_average_choices = load_file(
-            r'choices_{}_eps{}.pkl'.format('sampleaverageestimator', epsilon)
+    results = pd.read_pickle(
+            os.path.join(
+                    c.Paths.output,
+                    'ex_2_11',
+                    'results.pkl'
+            )
     )
-
-    all_optimal = load_file(r'optimal.pkl')
-
-    perc_average_optimal = all_average_choices.eq(all_optimal).expanding().mean()
-    perc_exponential_optimal = all_exponential_choices.eq(all_optimal).expanding().mean()
 
     with plt.rc_context(plotting.rc()):
         fig, ax = plt.subplots(1)
-        ax.plot(perc_average_optimal.mean(1), label='Sample Average Method')
-        ax.plot(perc_exponential_optimal.mean(1), label='Exponential Recency Weighted Method')
-        print('ready')
-
+        samples.plot(ax=ax)
+        ax.legend(
+                title='Actions',
+                bbox_to_anchor=(1, 1),
+                loc='upper left'
+        )
         ax.grid(alpha=0.25)
-        ax.legend(loc='lower right')
-        ax.set_title('Comparison of Estimation Methods on 10-Bandit Test Bed')
-        ax.set_xlabel(r'Number of Iterations')
-        ax.set_ylabel(r'% Optimal Choices (Cumulative)')
-        plt.tight_layout()
+        ax.set_xlabel('$t$')
+        ax.set_ylabel('Action Values')
+        ax.set_title('True Action Values on 10-Armed Bandit')
+        # plt.tight_layout()
         fig.savefig(
                 os.path.join(
-                        c.Paths.output,
-                        'ex_2_5',
-                        'learning_curve.png'
-                )
+                    c.Paths.output,
+                    'ex_2_11',
+                    'action_values.png'
+                ),
+                bbox_inches='tight'
         )
+
+        fig, ax = plt.subplots(1)
+        results.plot(ax=ax)
+        ax.set_xscale('log', basex=2)
+        ax.set_xlabel(r'$\varepsilon$')
+        ax.set_ylabel('Proportion Optimal Choice')
+        ax.set_title(r'Parameter Study of $\varepsilon$-greedy Action Value Agent on 10-Armed Test Bed')
+        ax.grid(alpha=0.25)
+        # plt.tight_layout()
+        fig.savefig(
+                os.path.join(
+                    c.Paths.output,
+                    'ex_2_11',
+                    'parameter_study.png'
+                ),
+                bbox_inches='tight'
+        )
+
