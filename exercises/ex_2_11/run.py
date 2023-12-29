@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
+
+import os
+
 import matplotlib
 import constants as c
 from bandits import (
@@ -10,10 +17,6 @@ from bandits import (
 import pandas as pd
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
-import os
-
-import sys
-sys.path.append('/Users/jinho/Desktop/reinforcement_learning')
 
 
 matplotlib.use('TKAgg')
@@ -28,7 +31,7 @@ STEP_SIZE = 0.1
 
 def process_outputs(output):
 	grades = output.choices == output.optimal
-	_, second_half = np.array.split(grades, 2)
+	_, second_half = np.array_split(grades, 2)
 	return np.mean(second_half)
 
 

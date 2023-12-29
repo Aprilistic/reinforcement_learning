@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
         fig, ax = plt.subplots(1)
         results.plot(ax=ax)
-        ax.set_xscale('log', basex=2)
+        ax.set_xscale('log', base=2)
         ax.set_xlabel(r'$\varepsilon$')
         ax.set_ylabel('Proportion Optimal Choice')
         ax.set_title(r'Parameter Study of $\varepsilon$-greedy Action Value Agent on 10-Armed Test Bed')
