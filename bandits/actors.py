@@ -15,7 +15,7 @@ class EpsilonGreedyActor(BaseActor):
 	def __init__(self, n_actions, epsilon=0.01, random_state=None):
 		self.n_actions = n_actions
 		self.epsilon = epsilon
-		self.random_state = random_state or np.randon.RandomState(seed=42)
+		self.random_state = random_state or np.random.RandomState(seed=42)
 
 		self.possible_actions = np.arange(self.n_actions)
 		self.explore = None
