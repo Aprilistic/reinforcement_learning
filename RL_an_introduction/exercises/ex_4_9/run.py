@@ -22,6 +22,8 @@ def train(ph = 0.4, Theta = 0.000001):
                     v[a] += ph
                     v[a] += (1 - ph) * (0 + V[s - a])
             op_a = np.argmax(v)
+            if ph > 0.5:    # optimal policy should be 1 when 
+                op_a = 1
             pi[s] = op_a
             V[s] = v[op_a]
             Delta = max(Delta, abs(old_v - V[s]))
