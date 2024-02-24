@@ -51,8 +51,8 @@ def build_track_b(save_map=False):
     return track
 
 if __name__ == "__main__":
-    track = build_track_a(save_map=True)
-    track = build_track_b(save_map=True)
+    # track = build_track_a(save_map=True)
+    # track = build_track_b(save_map=True)
     with open('./racetrack_env/maps/track_b.npy', 'rb') as f:
         track = np.load(f)
     plt.figure(figsize=(10, 10))
