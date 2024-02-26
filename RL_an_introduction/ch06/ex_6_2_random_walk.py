@@ -58,8 +58,8 @@ def MC_evaluation(alpha: float = 0.1, num_episodes=100) -> np.ndarray:
 
 
 
-def estimate_value(num_episdoes: int, true_value: np.ndarray) -> None:
-    V_hist_single = TD_evaluation(alpha=0.1, num_episodes=num_episdoes)
+def estimate_value(num_episodes: int, true_value: np.ndarray) -> None:
+    V_hist_single = TD_evaluation(alpha=0.1, num_episodes=num_episodes)
     sel_epochs = (0, 9, 99)
     selected_hist = V_hist_single[sel_epochs, 1:-1]
 
