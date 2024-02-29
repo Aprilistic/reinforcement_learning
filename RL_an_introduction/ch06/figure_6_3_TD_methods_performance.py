@@ -18,7 +18,7 @@ def epsilon_greedy(Q: np.ndarray, state: int, epsilon: float):
 # Get the expected value of given state
 def get_expectation(Q: np.ndarray, state: int, epsilon: float):
     nA = Q.shape[-1]
-    # Any action
+    # Any actions
     result = Q[state].sum() * (epsilon / nA)
     # Greedy action
     result += Q[state].max() * (1 - epsilon)
