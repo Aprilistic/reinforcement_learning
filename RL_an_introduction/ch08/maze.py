@@ -122,6 +122,7 @@ def choose_action(state, q_value, maze, dyna_params):
         values = q_value[state[0], state[1], :]
         return np.random.choice([action for action, value in enumerate(values) if value == np.max(values)])
 
+# dyna-q
 class TrivalModel:
     def __init__(self, rand = np.random):
         self.model = dict()
@@ -140,6 +141,46 @@ class TrivalModel:
         action_index = self.rand.choice(range(len(self.model[state].keys())))
         action = list(self.model[state])[action_index]
         next_state, reward = self.model[state][action]
+        state = deepcopy(state)
+        next_state = deepcopy(next_state)
+        return list(state), action, list(next_state), reward
+
+# dyna-q+
+class TimeModel:
+    def __init__(self, maze, time_weight = 1e-4, rand=np.random):
+        self.rand = rand
+        self.model = dict()
+        
+        self.time = 0
+        self.time_weight = time_weight
+        self.maze = maze
+        
+    def feed(self, state, action, next_state, reward):
+        state = deepcopy(state)
+        next_state = deepcopy(next_state)
+        self.time += 1
+        
+        if tuple(state) not in self.model.keys():
+            self.model[tuple(state)] = dict()
+            
+            # Actions that had never been tried before were allowed in the planning
+            for action_ in self.maze.actions:
+                if action_ != action:
+                    # Such actions' reward = 0, time = 1
+                    self.model[tuple(state)][action_] = [list(state), 0, 1]
+        
+        self.model[tuple(state)][action] = [list(next_state), reward, self.time]
+    
+    def sample(self):
+        state_index = self.rand.choice(range(len(self.model.keys())))
+        state = list(self.model)[state_index]
+        action_index = self.rand.choice(range(len(self.model[state].keys())))
+        action = list(self.model[state])[action_index]
+        next_state, reward, time = self.model[state][action]
+        
+        # adjust reward with elapsed time since last visit
+        reward += self.time_weight * np.sqrt(self.time - time)
+        
         state = deepcopy(state)
         next_state = deepcopy(next_state)
         return list(state), action, list(next_state), reward
@@ -169,3 +210,33 @@ def dyna_q(q_value, model, maze, dyna_params):
             break
     
     return steps
+
+def changing_maze(maze, dyna_params):
+    max_steps = maze.max_steps
+    
+    # cumulative rewards
+    rewards = np.zeros((dyna_params.runs, 2, max_steps))
+    
+    for run in tqdm(range(dyna_params.runs)):
+        models = [TrivalModel(), TimeModel(maze, time_weight=dyna_params.time_weight)]
+        
+        q_values = [np.zeros(maze.q_size), np.zeros(maze.q_size)]
+        
+        for i in range(len(dyna_params.methods)):
+            maze.obstacles = maze.old_obstacles
+            
+            steps = 0
+            last_steps = steps
+            while steps < max_steps:
+                steps += dyna_q(q_values[i], models[i], maze, dyna_params)
+                
+                rewards[run, i, last_steps: steps] = rewards[run, i, last_steps]
+                rewards[run, i, min(steps, max_steps - 1)] = rewards[run, i, last_steps] + 1
+                last_steps = steps
+                
+                if steps > maze.obstacle_switch_time:
+                    maze.obstacles = maze.new_obstacles
+                    
+    rewards = rewards.mean(axis=0)
+    
+    return rewards
