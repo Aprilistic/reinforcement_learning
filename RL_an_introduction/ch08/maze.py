@@ -211,6 +211,44 @@ def dyna_q(q_value, model, maze, dyna_params):
     
     return steps
 
+def prioritized_sweeping(q_value, model, maze, dyna_params):
+    state = maze.START_STATE
+    steps = 0
+    backups = 0
+    
+    while state not in maze.GOAL_STATES:
+        steps += 1
+        action = choose_action(state, q_value, maze, dyna_params)
+        next_state, reward = maze.step(state, action)
+        
+        model.feed(state, action, next_state, reward)
+        
+        priority = np.abs(reward + dyna_params.gamma * np.max(q_value[next_state[0], next_state[1], :]) - q_value[state[0], state[1], action])
+        
+        if priority > dyna_params.theta:
+            model.insert(priority, state, action)
+        
+        planning_step = 0
+        
+        while planning_step < dyna_params.planning_steps and not model.empty():
+            priority, state_, action_, next_state_, reward_ = model.sample()
+            
+            delta = reward_ + dyna_params.gamma * np.max(q_value[next_state_[0], next_state_[1], :] - q_value[state_[0], state_[1], action_])
+            q_value[state_[0], state_[1], action_] += dyna_params.alpha * delta
+            
+            # deal with all the predecessors of the sample state
+            for state_pre, action_pre, reward_pre in model.predecessor(state_):
+                priority = np.abs(reward_pre + dyna_params.gamma * np.max(q_value[state_[0], state_[1], :]) - q_value[state_pre[0], state_pre[1], action_pre])
+                if priority > dyna_params.theta:
+                    model.insert(priority, state_pre, action_pre)
+            planning_step += 1
+        
+        state = next_state
+        
+        backups += planning_step + 1
+    
+    return backups
+
 def changing_maze(maze, dyna_params):
     max_steps = maze.max_steps
     
