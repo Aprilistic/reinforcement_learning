@@ -53,7 +53,7 @@ def example_8_4():
     params_dyna.gamma = 0.95
     
     params = [params_prioritized, params_dyna]
-    models = [PriorityModel, TrivalModel]
+    models = [PriorityModel, TrivialModel]
     method_names = ['Prioritized Sweeping', 'Dyna-Q']
     
     num_of_mazes = 3
@@ -112,7 +112,7 @@ def example_8_4_parallel():
     params_dyna.gamma = 0.95
     
     params = [params_prioritized, params_dyna]
-    models = [PriorityModel, TrivalModel]
+    models = [PriorityModel, TrivialModel]
     method_names = ['Prioritized Sweeping', 'Dyna-Q']
     
     num_of_mazes = 5
@@ -124,7 +124,7 @@ def example_8_4_parallel():
     all_backups = []
 
     # Use ProcessPoolExecutor to parallelize the runs
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(run_experiment, run, method_names, models, methods, params, mazes, num_of_mazes, params_dyna) for run in range(runs)]
         for future in futures:
             all_backups.append(future.result())

@@ -27,7 +27,7 @@ def figure_8_2():
             dyna_params.planning_steps = planning_step
             q_value = np.zeros(dyna_maze.q_size)
             
-            model = TrivalModel()
+            model = TrivialModel()
             for ep in range(episodes):
                 steps[i, ep] += dyna_q(q_value, model, dyna_maze, dyna_params)
                 
