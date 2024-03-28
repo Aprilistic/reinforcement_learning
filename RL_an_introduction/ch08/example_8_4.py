@@ -115,16 +115,16 @@ def example_8_4_parallel():
     models = [PriorityModel, TrivialModel]
     method_names = ['Prioritized Sweeping', 'Dyna-Q']
     
-    num_of_mazes = 5
+    num_of_mazes = 6
     
     mazes = [original_maze.extend_maze(i) for i in range(1, num_of_mazes + 1)]
     methods = [prioritized_sweeping, dyna_q]
     
-    runs = 5
+    runs = 6
     all_backups = []
 
     # Use ProcessPoolExecutor to parallelize the runs
-    with ProcessPoolExecutor(max_workers=5) as executor:
+    with ProcessPoolExecutor() as executor:
         futures = [executor.submit(run_experiment, run, method_names, models, methods, params, mazes, num_of_mazes, params_dyna) for run in range(runs)]
         for future in futures:
             all_backups.append(future.result())
