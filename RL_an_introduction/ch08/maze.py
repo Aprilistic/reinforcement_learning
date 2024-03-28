@@ -17,7 +17,7 @@ class PriorityQueue:
         if item in self.entry_finder:
             self.remove_item(item)
         entry = [priority, self.counter, item]
-        self.counter
+        self.counter += 1
         self.entry_finder[item] = entry
         heapq.heappush(self.pq, entry)
     
@@ -185,7 +185,41 @@ class TimeModel:
         next_state = deepcopy(next_state)
         return list(state), action, list(next_state), reward
         
+class PriorityModel(TrivalModel):
+    def __init__(self, rand = np.random):
+        TrivalModel.__init__(self, rand)
+        self.priority_queue = PriorityQueue()
+        self.predecessors = dict()
         
+    def insert(self, priority, state, action):
+        self.priority_queue.add_item((tuple(state), action), -priority)
+        
+    def empty(self):
+        return self.priority_queue.empty()
+    
+    def sample(self):
+        (state, action), priority = self.priority_queue.pop_item()
+        next_state, reward = self.model[state][action]
+        state = deepcopy(state)
+        next_state = deepcopy(next_state)
+        return -priority, list(state), action, list(next_state), reward
+    
+    def feed(self, state, action, next_state, reward):
+        state = deepcopy(state)
+        next_state = deepcopy(next_state)
+        TrivalModel.feed(self, state, action, next_state, reward)
+        if tuple(next_state) not in self.predecessors.keys():
+            self.predecessors[tuple(next_state)] = set()
+        self.predecessors[tuple(next_state)].add((tuple(state), action))
+        
+    def predecessor(self, state):
+        if tuple(state) not in self.predecessors.keys():
+            return []
+        predecessors = []
+        for state_pre, action_pre in list(self.predecessors[tuple(state)]):
+            predecessors.append([list(state_pre), action_pre, self.model[state_pre][action_pre][1]])
+        return predecessors
+ 
 def dyna_q(q_value, model, maze, dyna_params):
     state = maze.START_STATE
     steps = 0
@@ -278,3 +312,16 @@ def changing_maze(maze, dyna_params):
     rewards = rewards.mean(axis=0)
     
     return rewards
+
+def check_path(q_values, maze):
+    max_steps = 14 * maze.resolution * 1.2
+    state = maze.START_STATE
+    steps = 0
+    while state not in maze.GOAL_STATES:
+        action = np.argmax(q_values[state[0], state[1], :])
+        state, _ = maze.step(state, action)
+        steps += 1
+        if steps > max_steps:
+            return False
+    return True
+
