@@ -10,7 +10,7 @@ def example_8_4():
     original_maze = Maze()
     
     params_prioritized = DynaParams()
-    params_prioritized.theta = 0.0001
+    params_prioritized.theta = 0.001
     params_prioritized.planning_steps = 5
     params_prioritized.alpha = 0.5
     params_prioritized.gamma = 0.95
@@ -24,12 +24,12 @@ def example_8_4():
     models = [PriorityModel, TrivalModel]
     method_names = ['Prioritized Sweeping', 'Dyna-Q']
     
-    num_of_mazes = 5
+    num_of_mazes = 3
     
     mazes = [original_maze.extend_maze(i) for i in range(1, num_of_mazes + 1)]
     methods = [prioritized_sweeping, dyna_q]
     
-    runs = 5
+    runs = 3
     
     backups = np.zeros((runs, 2, num_of_mazes))
     
