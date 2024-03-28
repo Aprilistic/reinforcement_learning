@@ -94,18 +94,22 @@ def on_policy(task, eval_interval):
     
     return zip(*performance)
         
+def evaluate_task(method, task, max_steps, x_ticks):
+    """Function to evaluate a single task with the given method."""
+    steps, v = method(task, max_steps / x_ticks)
+    return steps, v
+
 def figure_8_8():
     num_states = [1000, 10000]
     branch = [1, 3, 10]
     methods = [on_policy, uniform]
 
     # average across 30 tasks
-    n_tasks = 10
+    n_tasks = 30
 
     # number of evaluation points
     x_ticks = 100
 
-    # change to ProcessPoolExecutor if you have more cores
     plt.figure(figsize=(10, 20))
     for i, n in enumerate(num_states):
         plt.subplot(2, 1, i+1)
@@ -114,9 +118,17 @@ def figure_8_8():
             for method in methods:
                 steps = None
                 value = []
-                for task in tasks:
-                    steps, v = method(task, MAX_STEPS / x_ticks)
-                    value.append(v)
+
+                # Use ProcessPoolExecutor to parallelize task evaluation
+                with ProcessPoolExecutor() as executor:
+                    # Create a future for each task evaluation
+                    futures = [executor.submit(evaluate_task, method, task, MAX_STEPS, x_ticks) for task in tasks]
+                    
+                    # Wait for the futures to complete and aggregate the results
+                    for future in as_completed(futures):
+                        steps, v = future.result()
+                        value.append(v)
+
                 value = np.mean(np.asarray(value), axis=0)
                 plt.plot(steps, value, label=f'b = {b}, {method.__name__}')
         plt.title(f'{n} states')
