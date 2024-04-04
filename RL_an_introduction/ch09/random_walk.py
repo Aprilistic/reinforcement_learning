@@ -29,19 +29,19 @@ STEP_RANGE = 100
 def compute_true_value():
     true_value = np.arange(-1001, 1003, 2) / 1001.0
     
-    while True:
-        old_vlaue = np.copy(true_value)
-        for state in STATES:
-            true_value[state] = 0
-            for action in ACTIONS:
-                for step in range(1, STEP_RANGE + 1):
-                    step *= action
-                    next_state = state + step
-                    next_state = max(min(next_state, N_STATES + 1), 0)
-                    true_value[state] += 1.0 / (2 + STEP_RANGE) * true_value[next_state]
-        error = np.sum(np.abs(old_vlaue - true_value))
-        if error < 1e-2:
-            break
+    # while True:
+    #     old_vlaue = np.copy(true_value)
+    #     for state in STATES:
+    #         true_value[state] = 0
+    #         for action in ACTIONS:
+    #             for step in range(1, STEP_RANGE + 1):
+    #                 step *= action
+    #                 next_state = state + step
+    #                 next_state = max(min(next_state, N_STATES + 1), 0)
+    #                 true_value[state] += 1.0 / (2 + STEP_RANGE) * true_value[next_state]
+    #     error = np.sum(np.abs(old_vlaue - true_value))
+    #     if error < 1e-2:
+    #         break
     true_value[0] = true_value[-1] = 0
     
     return true_value
@@ -67,18 +67,18 @@ def get_action():
 class ValueFunction:
     def __init__(self, num_of_groups):
         self.num_of_groups = num_of_groups
-        self.group_size = N_STATES
+        self.group_size = N_STATES // num_of_groups
         
         self.params = np.zeros(num_of_groups)
         
     def value(self, state):
         if state in END_STATES:
             return 0
-        group_index = (state - 1)
+        group_index = (state - 1) // self.group_size
         return self.params[group_index]
     
     def update(self, delta, state):
-        group_index = (state - 1)
+        group_index = (state - 1) // self.group_size
         self.params[group_index] += delta
         
 def gradient_monte_carlo(value_function, alpha, distribution=None):
